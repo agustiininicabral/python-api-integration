@@ -112,5 +112,30 @@
         "url": "{{baseUrl}}/users/1"
       }
     }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const expected = {",
+          "  'GET - list posts (200 + JSON)': 200,",
+          "  'GET - missing resource (404)': 404,",
+          "  'POST - create post (201)': 201,",
+          "  'PUT - replace post (200)': 200,",
+          "  'PATCH - update post (200)': 200,",
+          "  'DELETE - remove post (200)': 200,",
+          "  'GET - bearer auth example (requires protected API)': 200",
+          "};",
+          "pm.test('HTTP status matches endpoint contract', function () {",
+          "  pm.response.to.have.status(expected[pm.info.requestName]);",
+          "});",
+          "if (pm.response.code !== 204 && pm.response.code !== 404) {",
+          "  pm.test('Response has JSON content type', function () { pm.response.to.be.json; });",
+          "}"
+        ]
+      }
+    }
   ]
 }
