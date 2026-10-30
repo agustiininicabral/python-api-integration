@@ -1,48 +1,60 @@
 # Python API Integration
 
-A reusable REST API client built with Python and Requests. It centralizes URL handling, bearer-token authentication, timeouts, retries, pagination, JSON validation and safe error reporting.
+![CI](https://github.com/agustiininicabral/python-api-integration/actions/workflows/ci.yml/badge.svg)
 
-## Features
+A reusable REST API client and API contract-testing example built with Python, Requests and pytest.
 
-- Configurable HTTP(S) base URL and resource paths.
-- Optional bearer-token authentication via an environment variable.
-- Explicit request timeout and bounded retries for transient network failures, HTTP 429 and selected 5xx responses.
-- Retry-After support and exponential backoff.
-- JSON response validation and actionable errors without exposing credentials.
-- Generic page-based list pagination.
-- CLI that writes API responses to a JSON file.
-- Fully mocked tests; CI does not depend on a third-party API being online.
+## Coverage
 
-## Run
+- REST methods: GET, POST, PUT, PATCH and DELETE.
+- Bearer-token authentication through `API_TOKEN`; credentials are never printed in the client representation.
+- Explicit connect/read timeout, bounded retries, Retry-After and exponential backoff for transient failures.
+- HTTP status contract assertions (for example, POST must return 201).
+- JSON decoding failures, non-retryable 4xx responses, connection errors and retry exhaustion.
+- Bounded page-based pagination and CLI JSON export.
+- A Postman collection for manual and exploratory CRUD/status checks.
+
+## Install and run
 
 ```bash
 python -m venv .venv
 # Windows: .venv\Scripts\activate
 # macOS/Linux: source .venv/bin/activate
 pip install -e ".[dev]"
+pytest --cov=api_integration --cov-report=term-missing
 python -m api_integration --base-url https://jsonplaceholder.typicode.com --resource posts --limit 10 --output output/posts.json
-pytest
 ```
 
-Set `API_TOKEN` in the environment when the target API requires bearer authentication. The token is never written to output or logs.
-
-## Python usage
+## Python example
 
 ```python
 from api_integration.client import APIClient
 
-with APIClient("https://jsonplaceholder.typicode.com", timeout=10, max_retries=2) as client:
-    posts = client.get("posts", params={"_limit": 10})
-    all_posts = client.get_all("posts", page_size=50, max_pages=10)
+with APIClient("https://jsonplaceholder.typicode.com", timeout=10, max_retries=2) as api:
+    posts = api.get("posts", params={"_limit": 5})
+    created = api.post("posts", {"title": "demo", "body": "contract test", "userId": 1},
+                       expected_status={201})
+    updated = api.patch(f"posts/{created['id']}", {"title": "updated"},
+                        expected_status={200})
 ```
 
-## Retry policy
+For protected services, set `API_TOKEN` in the environment. Never commit real tokens. The JSONPlaceholder demo API does not enforce authentication; the Postman bearer-token request is an example for a protected target and does not prove authorization enforcement on JSONPlaceholder.
 
-Retries are bounded by `max_retries` (additional attempts after the first request). HTTP 429, 500, 502, 503 and 504 plus connection/time-out errors are retryable. Other HTTP errors fail immediately. Delay uses Retry-After when it is a numeric number of seconds; otherwise exponential backoff is applied.
+## Postman
+
+Import [API-Integration.postman_collection.json](postman/API-Integration.postman_collection.json). Set `baseUrl` to the target API and `apiToken` only when using a protected service. Requests include GET, missing-resource 404, POST 201, PUT 200, PATCH 200, DELETE and a bearer-auth example.
+
+## Retry and error policy
+
+Retries are limited to HTTP 429, 500, 502, 503, 504, timeouts and connection errors. Other HTTP errors fail immediately. Numeric Retry-After values are honored; otherwise exponential backoff is used. `expected_status` enables explicit endpoint contracts. A 204 response returns `None`.
+
+## Test strategy
+
+Tests use deterministic fake sessions; CI does not depend on third-party API uptime or secrets. The suite covers request construction, auth header handling, pagination, invalid URLs/resources, malformed JSON, HTTP errors, retry behavior and all REST methods. GitHub Actions runs Python 3.11–3.13.
 
 ## Limitations
 
-Pagination uses configurable page and page-size query parameter names; APIs with cursor or Link-header pagination need an adapter. The default CLI endpoint is a public demo API and should be replaced for real integrations. Credentials are read from environment variables, not committed to source.
+Pagination is page-number based; cursor and Link-header APIs require an adapter. The public demo API is not an authentication test environment. The client currently exposes JSON request bodies and JSON responses rather than streaming or multipart uploads.
 
 ## License
 
