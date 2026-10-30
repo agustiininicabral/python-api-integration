@@ -57,7 +57,8 @@ def test_bearer_token_is_added_from_environment(monkeypatch):
     client = APIClient("https://example.test", session=session)
     client.get("profile")
     assert session.calls[0]["headers"]["Authorization"] == "Bearer secret-token"
-    assert "secret-token" not in repr(client.__dict__)
+    assert "secret-token" not in repr(client)
+    assert "token_configured=True" in repr(client)
 
 
 def test_retries_transient_http_error_then_succeeds():
@@ -70,6 +71,14 @@ def test_retries_transient_http_error_then_succeeds():
     assert client.get("items") == [{"ok": True}]
     assert len(session.calls) == 2
     assert delays == [0.5]
+
+
+def test_configured_backoff_factor_is_used():
+    session = FakeSession([FakeResponse(status=503), FakeResponse([])])
+    delays = []
+    client = APIClient("https://example.test", session=session, backoff_factor=2.0, sleep=delays.append)
+    assert client.get("items") == []
+    assert delays == [2.0]
 
 
 def test_retry_after_header_is_respected():
