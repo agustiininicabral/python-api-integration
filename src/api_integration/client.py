@@ -50,6 +50,13 @@ class APIClient:
         if resolved_token:
             self.headers["Authorization"] = f"Bearer {resolved_token}"
 
+    def __repr__(self) -> str:
+        return (
+            f"APIClient(base_url={self.base_url!r}, timeout={self.timeout!r}, "
+            f"max_retries={self.max_retries!r}, token_configured="
+            f"{'Authorization' in self.headers})"
+        )
+
     def __enter__(self) -> "APIClient":
         return self
 
