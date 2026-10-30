@@ -96,15 +96,14 @@ class APIClient:
                 self._sleep(self.backoff_factor * (2 ** attempt))
         raise APIClientError("API request failed unexpectedly")
 
-    @staticmethod
-    def _retry_delay(response: requests.Response, attempt: int) -> float:
+    def _retry_delay(self, response: requests.Response, attempt: int) -> float:
         retry_after = response.headers.get("Retry-After")
         if retry_after:
             try:
                 return max(0.0, float(retry_after))
             except ValueError:
                 pass
-        return 0.5 * (2 ** attempt)
+        return self.backoff_factor * (2 ** attempt)
 
     def get_all(
         self,
