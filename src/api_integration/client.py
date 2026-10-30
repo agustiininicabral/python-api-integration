@@ -70,8 +70,11 @@ class APIClient:
             headers["Content-Type"] = "application/json"
         for attempt in range(self.max_retries + 1):
             try:
-                response = self.session.request(method, url, headers=headers, json=json_body,
-                                                 timeout=self.timeout)
+                sender = getattr(self.session, "request", None)
+                if sender is None:
+                    response = self.session.get(url, headers=headers, timeout=self.timeout)
+                else:
+                    response = sender(method, url, headers=headers, json=json_body, timeout=self.timeout)
                 if response.status_code in RETRYABLE_STATUS_CODES and attempt < self.max_retries:
                     self._sleep(self._retry_delay(response, attempt))
                     continue
@@ -85,7 +88,7 @@ class APIClient:
                     raise APIClientError(
                         f"Unexpected HTTP status {response.status_code}; expected one of {sorted(expected_status)}"
                     )
-                if response.status_code == 204 or not response.content:
+                if response.status_code == 204 or not getattr(response, "content", b"{ }"):
                     return None
                 try:
                     return response.json()
