@@ -1,0 +1,116 @@
+{
+  "info": {
+    "name": "Python API Integration - Contract Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Executable CRUD, status, auth and negative scenarios against JSONPlaceholder. Set baseUrl and apiToken variables."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://jsonplaceholder.typicode.com"
+    },
+    {
+      "key": "apiToken",
+      "value": "",
+      "type": "secret"
+    }
+  ],
+  "item": [
+    {
+      "name": "GET - list posts (200 + JSON)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/posts?_limit=5"
+      }
+    },
+    {
+      "name": "GET - missing resource (404)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/posts/999999"
+      }
+    },
+    {
+      "name": "POST - create post (201)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"title\":\"contract test\",\"body\":\"created by Postman\",\"userId\":1}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/posts"
+      }
+    },
+    {
+      "name": "PUT - replace post (200)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"id\":1,\"title\":\"updated\",\"body\":\"replacement\",\"userId\":1}"
+        },
+        "url": "{{baseUrl}}/posts/1"
+      }
+    },
+    {
+      "name": "PATCH - update post (200)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"title\":\"patched\"}"
+        },
+        "url": "{{baseUrl}}/posts/1"
+      }
+    },
+    {
+      "name": "DELETE - remove post (200)",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/posts/1"
+      }
+    },
+    {
+      "name": "GET - bearer auth example (requires protected API)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{apiToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/users/1"
+      }
+    }
+  ]
+}
